@@ -476,8 +476,8 @@ public class Trimmer {
   private static File createMediaFile(final Promise promise, Context ctx) {
     UUID uuid = UUID.randomUUID();
     String mixName = uuid.toString() + "-merged.mp4";
-    String path = Environment.getExternalStorageDirectory().getAbsolutePath();
-    //File path = ctx.getExternalFilesDir(Environment.DIRECTORY_MOVIES);
+    //String path = Environment.getExternalStorageDirectory().getAbsolutePath();
+    File path = ctx.getExternalFilesDir(Environment.DIRECTORY_MOVIES);
     File moviefile = new File(path, mixName);
 
     try {
