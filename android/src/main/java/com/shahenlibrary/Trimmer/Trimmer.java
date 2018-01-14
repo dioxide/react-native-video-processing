@@ -28,9 +28,11 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
-import android.media.MediaMetadataRetriever;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Base64;
 import android.util.Log;
 
@@ -43,32 +45,24 @@ import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.shahenlibrary.Events.Events;
 import com.shahenlibrary.interfaces.OnCompressVideoListener;
-import com.shahenlibrary.interfaces.OnTrimVideoListener;
 import com.shahenlibrary.utils.VideoEdit;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
-
-import wseemann.media.FFmpegMediaMetadataRetriever;
-
-import java.util.UUID;
-import java.io.FileOutputStream;
-import java.util.Arrays;
-import java.util.ArrayList;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.InputStream;
-import java.io.BufferedInputStream;
 import java.io.FileInputStream;
-import android.os.AsyncTask;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-
-import java.security.NoSuchAlgorithmException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Formatter;
+import java.util.UUID;
+import android.os.Environment;
+import wseemann.media.FFmpegMediaMetadataRetriever;
 
 
 public class Trimmer {
@@ -424,6 +418,8 @@ public class Trimmer {
     return sizes;
   }
 
+
+
   public static void compress(String source, ReadableMap options, final Promise promise, final OnCompressVideoListener cb, ThemedReactContext tctx, ReactApplicationContext rctx) {
     Log.d(LOG_TAG, "OPTIONS: " + options.toString());
 
@@ -451,7 +447,7 @@ public class Trimmer {
     Double bitrateMultiplier = options.hasKey("bitrateMultiplier") ? options.getDouble("bitrateMultiplier") : null;
     Boolean removeAudio = options.hasKey("removeAudio") ? options.getBoolean("removeAudio") : false;
 
-    final File tempFile = createTempFile("mp4", promise, ctx);
+    final File mediaFile = createMediaFile( promise, ctx);
 
     ArrayList<String> cmd = new ArrayList<String>();
     cmd.add("-y");
@@ -472,9 +468,30 @@ public class Trimmer {
     if (removeAudio) {
       cmd.add("-an");
     }
-    cmd.add(tempFile.getPath());
+    cmd.add(mediaFile.getPath());
 
-    executeFfmpegCommand(cmd, tempFile.getPath(), rctx, promise, "compress error", cb);
+    executeFfmpegCommand(cmd, mediaFile.getPath(), rctx, promise, "compress error", cb);
+  }
+
+  private static File createMediaFile(final Promise promise, Context ctx) {
+    UUID uuid = UUID.randomUUID();
+    String mixName = uuid.toString() + "-merged.mp4";
+    String path = Environment.getExternalStorageDirectory().getAbsolutePath();
+    //File path = ctx.getExternalFilesDir(Environment.DIRECTORY_MOVIES);
+    File moviefile = new File(path, mixName);
+
+    try {
+      moviefile.createNewFile();
+    } catch( IOException e ) {
+      promise.reject("Failed to create media file", e.toString());
+      return null;
+    }
+
+    if (moviefile.exists()) {
+      moviefile.delete();
+    }
+
+    return moviefile;
   }
 
   static File createTempFile(String extension, final Promise promise, Context ctx) {
