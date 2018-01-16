@@ -147,6 +147,7 @@ public class Trimmer {
 
       if ( errorMessageFromCmd != null ) {
         String errorMessage = errorMessageTitle + ": failed. " + errorMessageFromCmd;
+
         if (cb != null) {
           cb.onError(errorMessage);
         } else if (promise != null) {
@@ -449,21 +450,52 @@ public class Trimmer {
 
     final File mediaFile = createMediaFile( promise, ctx);
 
+
+    //-y -i "+mInputPath+" -c:v libx264 -preset ultrafast -tune fastdecode -vf -s 640x480 -threads 5 -strict -2 "+mOutputPath.getAbsolutePath();
+
+
     ArrayList<String> cmd = new ArrayList<String>();
+
+    cmd.add("-hwaccel"); //add param
+    cmd.add("auto");//add param
+
+    cmd.add("-threads");
+    cmd.add("6");
+
     cmd.add("-y");
+
     cmd.add("-i");
     cmd.add(source);
+
     cmd.add("-c:v");
     cmd.add("libx264");
-    if ( width != 0 && height != 0 ) {
-      cmd.add("-vf");
-      cmd.add("scale=" + Integer.toString(width) + ":" + Integer.toString(height));
-    }
 
     cmd.add("-preset");
     cmd.add("ultrafast");
-    cmd.add("-pix_fmt");
-    cmd.add("yuv420p");
+
+    cmd.add("-tune");
+    cmd.add("fastdecode");
+
+    if ( width != 0 && height != 0 ) {
+      cmd.add("-vf");
+      cmd.add("scale=" + Integer.toString(width) + ":" + Integer.toString(height));
+      //cmd.add("-s");//add param
+      //cmd.add(Integer.toString(width)+"x"+Integer.toString(height));//add param
+
+    }
+
+    //debug start
+
+    cmd.add("-crf");
+    cmd.add("28");
+
+    //cmd.add("-strict");
+    //cmd.add("experimental");
+
+    //debug end
+
+    //cmd.add("-pix_fmt");//for ios quicktime needs
+    //cmd.add("yuv420p");//for ios quicktime needs
 
     if (removeAudio) {
       cmd.add("-an");
